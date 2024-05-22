@@ -99,8 +99,23 @@ while True:
     if(added):
         print(lados)
     cv2. imshow('Deteccion de Rostro y ojos' ,frame)
-    if(cv2.waitKey(1)==ord('q')):
+    t=cv2.waitKey(1)
+    if(t==27):
         break
+    elif t == 119:  # Flecha arriba
+        print("Flecha arriba presionada")
+        print(a1)
+        a1+=1
+    elif t == 115:  # Flecha abajo
+        print("Flecha abajo presionada")
+        print(a1)
+        a1-=1
+    elif t == 97:  # Flecha izquierda
+        print("Flecha izquierda presionada")
+        a2-=1
+    elif t == 100:  # Flecha derecha
+        print("Flecha derecha presionada")
+        a2+=1
 
 print(data_training)
 
@@ -184,8 +199,23 @@ while True:
         break
     
     cv2. imshow('Deteccion de Rostro y ojos' ,frame)
-    if(cv2.waitKey(1)==ord('q')):
+    t=cv2.waitKey(1)
+    if(t==27):
         break
+    elif t == 119:  # Flecha arriba
+        print("Flecha arriba presionada")
+        print(a1)
+        a1+=1
+    elif t == 115:  # Flecha abajo
+        print("Flecha abajo presionada")
+        print(a1)
+        a1-=1
+    elif t == 97:  # Flecha izquierda
+        print("Flecha izquierda presionada")
+        a2-=1
+    elif t == 100:  # Flecha derecha
+        print("Flecha derecha presionada")
+        a2+=1
 
 
 cap.release()
