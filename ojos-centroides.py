@@ -64,6 +64,73 @@ lados = [
     {"name":"derecha","samples":[]}
 ]
 data_training = {"X":[],"y":[]}
+hablar("acomodese y calibre el brillo con w y s, termine con esc")
+while True:
+    ret, frame = cap.read()
+    added = False
+    if ret == False:
+        break
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    caras = face_cascade.detectMultiScale(gray,1.3,5)
+    for (x,y,w,h) in caras:
+        #Dibujando los rectangulos de detecciona de la cara
+        cv2.putText(frame, 'Rostro' ,(x,y-20),2,0.5, (255,0,0),1, cv2.LINE_AA)
+        cv2.rectangle(frame, (x,y), (x+w,y+h), (255,0,0),5)
+        roi_gray = gray[y:y+w, x:x+w]
+        roi_color = frame [y:y+h, x:x+w]
+        ojos = eye_cascade.detectMultiScale(roi_gray,1.3,8,maxSize=(64, 64))
+        for (ох, oy, ow, oh) in ojos:
+
+            x1 = ох
+            x2 = ох+ow
+            y1 = oy
+            y2 = oy+oh
+            al,an,c = roi_color.shape
+            #cv2.putText(roi_color, "rec", (x1, y1), cv2.FONT_HERSHEY_COMPLEX,1,(0,255,0),2)
+            cv2.rectangle(roi_color, (x1,y1),(x2,y2),(0,255,0),2)
+            recorte = roi_color[y1:y2, x1:x2]
+            gris = cv2.cvtColor(recorte, cv2.COLOR_BGR2GRAY)
+            gris = cv2.GaussianBlur(gris, (umbral1,umbral2), 0)
+            _, umbral =cv2.threshold(gris,a1,a2,cv2.THRESH_BINARY_INV)
+            contornos, _ = cv2.findContours(umbral, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contornos = sorted(contornos, key=lambda x: cv2.contourArea(x), reverse=True)
+
+            for contorno in contornos:
+                (x,y,ancho,alto)=cv2.boundingRect(contorno)
+                #print(x,y, ancho, alto)www
+                if(ancho > 20 or alto > 20 or ancho/alto > 1.69):
+                    break
+                if(indiceActual < len(lados)):
+                    cv2.putText(roi_color, lados[indiceActual]["name"], (x1, y1), cv2.FONT_HERSHEY_COMPLEX,1,(0,255,0),2)
+                cv2.rectangle(roi_color, (x+x1,y+y1), (x+ancho+x1, y+alto+y1),(0,255,0),1)
+                cv2.line(roi_color, (x1+x+int(ancho/2),0),(x1+x+int(ancho/2),al),(0,0,255),1)
+                cv2.line(roi_color, (0, y1+y+int(ancho/2)),(an,y1+y+int(ancho/2)),(0,0,255),1)
+                
+                break
+            break
+        break
+    
+    if(added):
+        print(lados)
+    cv2. imshow('Deteccion de Rostro y ojos' ,frame)
+    t=cv2.waitKey(1)
+    if(t==27):
+        break
+    elif t == 119:  # Flecha arriba
+        print("Flecha arriba presionada")
+        print(a1)
+        a1+=1
+    elif t == 115:  # Flecha abajo
+        print("Flecha abajo presionada")
+        print(a1)
+        a1-=1
+    elif t == 97:  # Flecha izquierda
+        print("Flecha izquierda presionada")
+        a2-=1
+    elif t == 100:  # Flecha derecha
+        print("Flecha derecha presionada")
+        a2+=1
 
 hablar("vamos a entrenar el modelo, mire hacia arriba")
 while True:
@@ -102,6 +169,9 @@ while True:
 
             for contorno in contornos:
                 (x,y,ancho,alto)=cv2.boundingRect(contorno)
+                #print(x,y, ancho, alto)
+                if(ancho > 20 or alto > 20 or ancho/alto > 1.69):
+                    break
                 if(indiceActual < len(lados)):
                     cv2.putText(roi_color, lados[indiceActual]["name"], (x1, y1), cv2.FONT_HERSHEY_COMPLEX,1,(0,255,0),2)
                 cv2.rectangle(roi_color, (x+x1,y+y1), (x+ancho+x1, y+alto+y1),(0,255,0),1)
@@ -110,8 +180,8 @@ while True:
                 
                 if(indiceActual < len(lados) and len(lados[indiceActual]["samples"]) < testsSize):
                     added=True
-                    print(indiceActual)
-                    print(len(lados[indiceActual]["samples"]))
+                    #print(indiceActual)
+                    #print(len(lados[indiceActual]["samples"]))
                     lados[indiceActual]["samples"].append([x, y])
                     data_training["X"].append([x, y])
                     data_training["y"].append(indiceActual)
@@ -153,8 +223,8 @@ print(data_training)
 hablar("entrenando")
 
 X = np.array(data_training["X"])
-y = tf.keras.utils.to_categorical(np.array(data_training["y"]), num_classes=4)
-
+#y = tf.keras.utils.to_categorical(np.array(data_training["y"]), num_classes=4)
+y = np.array(data_training["y"])
 #model = tf.keras.Sequential(
 #    [
 #        tf.keras.layers.Dense(4, activation="tanh", input_shape=(2,)),
@@ -171,7 +241,12 @@ y = tf.keras.utils.to_categorical(np.array(data_training["y"]), num_classes=4)
 #)
 #
 #model.fit(X, y, epochs=90, batch_size=1)
-centroides,elems = clusterData(X, 4)
+print(X)
+print(y)
+centroidesTemp = np.array([np.mean(X[y == i], axis=0) for i in range(len(lados))])
+print(centroidesTemp)
+print(np.concatenate((centroidesTemp, X), axis=0))
+centroides,elems = clusterData(np.concatenate((centroidesTemp, X), axis=0), 4)
 
 predicciones=[]
 
@@ -211,6 +286,8 @@ while True:
 
             for contorno in contornos:
                 (x,y,ancho,alto)=cv2.boundingRect(contorno)
+                if(ancho > 20 or alto > 20 or ancho/alto > 1.69):
+                    break
                 #cv2.putText(roi_color, lados[indiceActual]["name"], (x1, y1), cv2.FONT_HERSHEY_COMPLEX,1,(0,255,0),2)
                 cv2.rectangle(roi_color, (x+x1,y+y1), (x+ancho+x1, y+alto+y1),(0,255,0),1)
                 cv2.line(roi_color, (x1+x+int(ancho/2),0),(x1+x+int(ancho/2),al),(0,0,255),1)
